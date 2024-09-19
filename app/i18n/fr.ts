@@ -1,4 +1,3 @@
-import demoFr from "./demo-fr"
 import { Translations } from "./en"
 
 const fr: Translations = {

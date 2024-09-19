@@ -1,5 +1,3 @@
-import demoEn from "./demo-en"
-
 const en = {
   common: {
     ok: "OK!",

@@ -1,4 +1,3 @@
-import demoJa from "./demo-ja"
 import { Translations } from "./en"
 
 const ja: Translations = {

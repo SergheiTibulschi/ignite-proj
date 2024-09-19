@@ -1,4 +1,3 @@
-import demoKo from "./demo-ko"
 import { Translations } from "./en"
 
 const ko: Translations = {

@@ -10,6 +10,8 @@
  * The app navigation resides in ./app/navigators, so head over there
  * if you're interested in adding screens and navigators.
  */
+import Reactotron, { networking } from "reactotron-react-native";
+
 if (__DEV__) {
   // Load Reactotron in development only.
   // Note that you must be using metro's `inlineRequires` for this to work.
@@ -52,6 +54,11 @@ const config = {
     },
   },
 }
+
+Reactotron.configure({})
+  // @ts-ignore
+  .use(networking()) // <--- here we go!
+  .connect();
 
 interface AppProps {
   hideSplashScreen: () => Promise<boolean>

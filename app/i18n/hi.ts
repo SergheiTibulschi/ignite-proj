@@ -1,4 +1,3 @@
-import demoHi from "./demo-hi"
 import { Translations } from "./en"
 
 const hi: Translations = {
