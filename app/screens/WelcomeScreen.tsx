@@ -63,7 +63,7 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeSc
 
         try {
           const formData = new FormData();
-          formData.append('file', '');
+          formData.append('file', blobData);
           formData.append('upload_preset', 'st_cloudinary_preset'); // Cloudinary upload preset
 
 
