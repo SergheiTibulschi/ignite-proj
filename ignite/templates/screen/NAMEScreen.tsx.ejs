@@ -12,7 +12,6 @@ patches:
   skip: <%= props.skipIndexFile %>
 ---
 import React, { FC } from "react"
-import { observer } from "mobx-react-lite"
 import { ViewStyle } from "react-native"
 import { AppStackScreenProps } from "app/navigators"
 import { Screen, Text } from "app/components"
@@ -21,7 +20,7 @@ import { Screen, Text } from "app/components"
 
 interface <%= props.pascalCaseName %>ScreenProps extends AppStackScreenProps<"<%= props.pascalCaseName %>"> {}
 
-export const <%= props.pascalCaseName %>Screen: FC<<%= props.pascalCaseName %>ScreenProps> = observer(function <%= props.pascalCaseName %>Screen() {
+++export const <%= props.pascalCaseName %> = (props: <%= props.pascalCaseName %>Props) => {
   // Pull in one of our MST stores
   // const { someStore, anotherStore } = useStores()
 
@@ -32,7 +31,7 @@ export const <%= props.pascalCaseName %>Screen: FC<<%= props.pascalCaseName %>Sc
       <Text text="<%= props.camelCaseName %>" />
     </Screen>
   )
-})
+}
 
 const $root: ViewStyle = {
   flex: 1,

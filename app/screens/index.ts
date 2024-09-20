@@ -1,4 +1,2 @@
-export * from "./WelcomeScreen"
+export * from "./CameraScreen/CameraScreen"
 export * from "./ErrorScreen/ErrorBoundary"
-// export other screens here
-export * from "./CodesScreen"

@@ -86,14 +86,8 @@ export function Icon(props: IconProps) {
 }
 
 export const iconRegistry = {
-  x: require("../../assets/icons/x.svg"),
-  'arrow-clockwise': require("../../assets/icons/arrows-clockwise.svg"),
-  lightning: require("../../assets/icons/lightning.svg"),
-  'lightning-a': require("../../assets/icons/lightning-a.svg"),
-  'lightning-slash': require("../../assets/icons/lightning-slash.svg"),
-  pause: require("../../assets/icons/pause.svg"),
-  stop: require("../../assets/icons/stop.svg"),
-  'stop-fill': require("../../assets/icons/stop-fill.svg"),
+  pause: require("../../assets/icons/pause.png"),
+  play: require("../../assets/icons/play.png"),
 }
 
 const $imageStyleBase: ImageStyle = {

@@ -1,5 +1,6 @@
 import React, { FC, useEffect, useRef, useState } from "react"
 import { Text, View, ViewStyle } from "react-native"
+import { spacing } from "app/theme"
 
 const secondsInHour = 3_600_000
 const secondsInMinute = 60_000
@@ -104,7 +105,10 @@ export const RecordingTimer: FC<RecordingTimerProps> = ({ recordedTime }) => {
 const $container: ViewStyle = {
   flexDirection: "row",
   alignItems: 'center',
-  gap: 8
+  gap: spacing.xs,
+  backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  borderRadius: spacing.xxs,
+  padding: spacing.xxs
 }
 
 const $dot: ViewStyle = {

@@ -1,30 +1,33 @@
-import { observer } from "mobx-react-lite"
 import React, { FC, useRef, useState } from "react"
 import { View, ViewStyle, Linking, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native"
 import { Button, Text, Screen } from "app/components"
-import { AppStackScreenProps } from "../navigators"
-import { colors, palette, spacing } from "../theme"
+import { AppStackScreenProps } from "app/navigators"
+import { colors, palette, spacing } from "app/theme"
 import { Camera, CameraPermissionStatus, useCameraDevice } from "react-native-vision-camera"
-// import { PermissionsAndroid, Platform } from 'react-native';
-import { RecordingTimer, useRecordingTime } from "app/screens/RecordingTimer"
-import { RecordControl } from "app/screens/RecordControl"
-import { PauseControl } from "app/screens/PauseControl"
+import { RecordingTimer, useRecordingTime } from "app/screens/CameraScreen/components/RecordingTimer"
+import { RecordControl } from "app/screens/CameraScreen/components/RecordControl"
+import { PauseControl } from "app/screens/CameraScreen/components/PauseControl"
+import ReactNativeBlobUtil from 'react-native-blob-util'
+import { CloudinaryResponse } from "../../../types/video"
+import Toast from 'react-native-toast-message';
+import { useUploadedVideos } from "app/providers/UploadedVideosProvider"
+import { UploadedVideos } from "app/screens/CameraScreen/components/UploadedVideos"
+import { SafeAreaView } from "react-native-safe-area-context"
 
-const cloudName = 'dhfprmjgu'
+interface CameraScreenProps extends AppStackScreenProps<"Camera"> {}
 
-interface WelcomeScreenProps extends AppStackScreenProps<"Welcome"> {}
-
-export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeScreen() {
+export const CameraScreen: FC<CameraScreenProps> = () => {
   const [cameraPermission, setCameraPermission] = useState<CameraPermissionStatus>();
   const device = useCameraDevice("back");
   const [isActive, setIsActive] = useState(false);
   const cameraRef = useRef<Camera>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [error, setError] = useState('M')
   const {
     onResumeRecording, onPauseRecording, onStartRecording, recordedTime, onRecordingFinished
   } = useRecordingTime(isPaused)
+  const [isLoading, setIsLoading] = useState(false)
+  const { addVideo } = useUploadedVideos()
 
   React.useEffect(() => {
     setCameraPermission(Camera.getCameraPermissionStatus());
@@ -41,15 +44,6 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeSc
     }
   }, [cameraPermission]);
 
-  // const saveVideoToGallery = async (videoPath: string) => {
-  //   if (Platform.OS === "android" && !(await hasAndroidPermission())) {
-  //     setCameraPermission("denied");
-  //     return;
-  //   }
-  //
-  //   const t = await CameraRoll.save(videoPath, { type: 'video' })
-  // };
-
   const startRecording = () => {
     setIsRecording(true)
     cameraRef.current?.startRecording({
@@ -57,36 +51,40 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeSc
       onRecordingFinished: async (video) => {
         onRecordingFinished()
 
-        const imageResponse = await fetch(`file://${video.path}`)
-        const blobData = await imageResponse.blob()
-        const buffer = await new Response(blobData).arrayBuffer()
-
+        closeCamera()
+        setIsLoading(true)
         try {
-          const formData = new FormData();
-          formData.append('file', blobData);
-          formData.append('upload_preset', 'st_cloudinary_preset'); // Cloudinary upload preset
+          const fetchRawResponse = await ReactNativeBlobUtil.fetch('POST', `https://api.cloudinary.com/v1_1/${process.env.CLOUD_NAME}/video/upload`, {
+            'Content-Type': 'multipart/form-data',
+          }, [
+            {name: 'file', filename: `video_${Date.now()}.mp4`, type: 'video/mp4', data: ReactNativeBlobUtil.wrap(video.path.replace('file://', ''))},
+            {name: 'upload_preset', data: process.env.UPLOAD_PRESET }
+          ])
+          const cloudinaryResponse = fetchRawResponse.json() as CloudinaryResponse
 
+          addVideo(cloudinaryResponse)
 
-          const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${cloudName}/upload`, // Replace with your Cloudinary cloud name
-            {
-              method: 'POST',
-              body: formData
-            }
-          );
-          const data = await response.json();
-          console.log('Video uploaded successfully:', data.secure_url);
-          console.log(JSON.stringify(data, null, 2))
-          return data.secure_url; // Return the uploaded video URL
-        } catch (error) {
-          console.log({
-            error
+          Toast.show({
+            type: 'success',
+            text1: 'Success!',
+            text2: `Video uploaded successfully 🎉`
           })
-          console.error('Error uploading video to Cloudinary:', error);
+        } catch (error) {
+          Toast.show({
+            type: 'error',
+            text1: 'Oops',
+            text2: 'Video uploaded failed 😢'
+          })
+        } finally {
+          setIsLoading(false)
         }
       },
       onRecordingError: () => {
-        setError('Error while recording video. Please try again. 3')
+        Toast.show({
+          type: 'error',
+          text1: 'Oops',
+          text2: 'Error while recording video. Please try again.'
+        })
       }
     })
     onStartRecording()
@@ -128,9 +126,20 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeSc
     }
   }
 
+  if (isLoading) {
+    return (
+      <Screen style={$container}>
+        <View>
+          <Text>Video is uploading. It might take some time.</Text>
+          <ActivityIndicator color={palette.accent500} />
+        </View>
+      </Screen>
+    )
+  }
+
   if (device && isActive) {
     return (
-      <View style={$cameraContainer}>
+      <SafeAreaView style={$cameraContainer}>
         <View style={$cameraOverlay}>
           <View style={$overlayTop}>
             <View style={$overlayBarLeftItem}></View>
@@ -169,28 +178,28 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeSc
           video
           ref={cameraRef}
         />
-      </View>
+      </SafeAreaView>
     );
   }
 
+
   return (
     <Screen contentContainerStyle={$container}>
-      <View>
-        {error && (
-          <View style={$errorStyle}>
-            <Text>{error}</Text>
-          </View>
-        )}
-        <Button
-          style={$openCameraControl}
-          onPress={openCamera}
-          text="Open Camera"
-        />
-        <ActivityIndicator color={palette.accent500} />
-      </View>
+      <SafeAreaView>
+        <View>
+          <Button
+            style={$openCameraControl}
+            onPress={openCamera}
+            text="Record a video"
+          />
+        </View>
+        <View style={$videoList}>
+          <UploadedVideos />
+        </View>
+      </SafeAreaView>
     </Screen>
   )
-})
+}
 
 const $container: ViewStyle = {
   flex: 1,
@@ -208,7 +217,7 @@ const $closeCamera: ViewStyle = {
   width: 40,
   height: 40,
   borderRadius: 40 / 2,
-  backgroundColor: "rgba(140, 140, 140, 0.3)",
+  backgroundColor: "rgba(255, 255, 255, 0.3)",
   justifyContent: "center",
   alignItems: "center",
 };
@@ -238,7 +247,7 @@ const $overlayBarLeftItem: ViewStyle = {
 
 const $overlayBarCenterItem: ViewStyle = {
   flex: 1,
-  alignItems: 'center'
+  alignItems: 'center',
 }
 
 const $overlayBarRightItem: ViewStyle = {
@@ -255,9 +264,10 @@ const $overlayBottom: ViewStyle = {
 
 const $openCameraControl: ViewStyle = {
   borderColor: palette.accent500,
+  width: '100%'
 }
 
-const $errorStyle: ViewStyle = {
-  backgroundColor: palette.angry100,
-  padding: spacing.sm,
+const $videoList: ViewStyle = {
+  flex: 1,
+  marginTop: spacing.xl
 }
